@@ -19,7 +19,7 @@ class RevolutEntry:
     def from_row(cls, row):
         def str_to_float(value: str):
             if value:
-                return float(value.strip())
+                return float(value.strip().replace(',', ''))
             else:
                 return None
 
