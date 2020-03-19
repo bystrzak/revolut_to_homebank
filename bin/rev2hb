@@ -1,0 +1,5 @@
+#!/usr/bin/env python
+
+from revolut_to_homebank import revolut_to_homebank
+
+revolut_to_homebank.main()
