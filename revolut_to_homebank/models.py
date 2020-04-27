@@ -4,7 +4,12 @@ from dateutil.parser import parse
 
 
 @dataclass
-class RevolutEntry:
+class Entry:
+    pass
+
+
+@dataclass
+class RevolutEntry(Entry):
     date: datetime
     description: str
     paid_out: float
@@ -37,6 +42,33 @@ class RevolutEntry:
 
 
 @dataclass
+class MBankPLEntry(Entry):
+    date: datetime
+    description: str
+    source_account: str
+    category: str
+    amount: float
+
+    @classmethod
+    def from_row(cls, row):
+        def str_to_float(value: str) -> [float, None]:
+            if value:
+                return float(value.replace(' ', '').replace(',', '.').replace('PLN', '').strip())
+            else:
+                return None
+
+        def remove_multiple_whitespaces(string: str) -> str:
+            return ' '.join(string.split())
+
+        return cls(
+            date=parse(row[0]),
+            description=remove_multiple_whitespaces(row[1]),
+            source_account=row[2].strip(),
+            category=row[3],
+            amount=str_to_float(row[4]),
+        )
+
+@dataclass
 class HomeBankEntry:
     date: datetime
     payment_type: int
@@ -46,6 +78,13 @@ class HomeBankEntry:
     amount: float
     category: str
     tags: str
+
+    @classmethod
+    def from_entry(cls, entry: Entry):
+        if isinstance(entry, RevolutEntry):
+            return cls.from_revolutentry(entry)
+        elif isinstance(entry, MBankPLEntry):
+            return cls.from_mbankplentry(entry)
 
     @classmethod
     def from_revolutentry(cls, revolut_entry: RevolutEntry):
@@ -69,5 +108,18 @@ class HomeBankEntry:
             memo=revolut_entry.description,
             amount=calculate_amount(),
             category=revolut_entry.category,
+            tags='',
+        )
+
+    @classmethod
+    def from_mbankplentry(cls, mbankpl_entry: MBankPLEntry):
+        return cls(
+            date=mbankpl_entry.date,
+            payment_type=5,
+            info='BA',
+            payee=mbankpl_entry.description,
+            memo=mbankpl_entry.description,
+            amount=mbankpl_entry.amount,
+            category='',
             tags='',
         )
