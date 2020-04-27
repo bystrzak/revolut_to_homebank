@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from dateutil.parser import parse
+from dateutil.parser import parse, parserinfo
 
 
 @dataclass
@@ -69,6 +69,37 @@ class MBankPLEntry(Entry):
         )
 
 @dataclass
+class NestBankEntry(Entry):
+    date: datetime
+    type: str
+    amount: float
+    currency: str
+    payee: str
+    payee_acc_no: str
+    description: str
+    balance: float
+
+    @classmethod
+    def from_row(cls, row):
+        def str_to_float(value: str) -> [float, None]:
+            if value:
+                return float(value.replace(' ', '').replace(',', '.').strip())
+            else:
+                return None
+
+        return cls(
+            date=parse(row[1], parserinfo=parserinfo(dayfirst=True)),
+            type=row[2],
+            amount=str_to_float(row[3]),
+            currency=row[4],
+            payee=row[5],
+            payee_acc_no=row[6],
+            description=row[7],
+            balance=row[8],
+        )
+
+
+@dataclass
 class HomeBankEntry:
     date: datetime
     payment_type: int
@@ -85,6 +116,8 @@ class HomeBankEntry:
             return cls.from_revolutentry(entry)
         elif isinstance(entry, MBankPLEntry):
             return cls.from_mbankplentry(entry)
+        elif isinstance(entry, NestBankEntry):
+            return cls.from_nestbankentry(entry)
 
     @classmethod
     def from_revolutentry(cls, revolut_entry: RevolutEntry):
@@ -120,6 +153,19 @@ class HomeBankEntry:
             payee=mbankpl_entry.description,
             memo=mbankpl_entry.description,
             amount=mbankpl_entry.amount,
+            category='',
+            tags='',
+        )
+
+    @classmethod
+    def from_nestbankentry(cls, nestbank_entry: NestBankEntry):
+        return cls(
+            date=nestbank_entry.date,
+            payment_type=5,
+            info='BA',
+            payee=nestbank_entry.payee,
+            memo=nestbank_entry.description,
+            amount=nestbank_entry.amount,
             category='',
             tags='',
         )

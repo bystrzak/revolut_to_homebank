@@ -3,12 +3,13 @@ import csv
 from dataclasses import asdict
 from enum import Enum
 
-from revolut_to_homebank.models import RevolutEntry, HomeBankEntry, MBankPLEntry
+from revolut_to_homebank.models import RevolutEntry, HomeBankEntry, MBankPLEntry, NestBankEntry
 
 
 class ConverterType(Enum):
     REVOLUT = 'revolut'
     MBANKPL = 'mbankpl'
+    NESTBANK = 'nestbank'
 
 
 def get_converter(export_type, input_file):
@@ -24,9 +25,11 @@ def get_converter(export_type, input_file):
         return RevolutEntry
     elif export_type == ConverterType.MBANKPL.value:
         return MBankPLEntry
+    elif export_type == ConverterType.NESTBANK.value:
+        return NestBankEntry
 
 
-def convert(input_file, export_type, output_file="output.csv", delimiter=';'):
+def convert(input_file, export_type, output_file="output.csv", delimiter=';', output_delimiter=';'):
     converter = get_converter(export_type, input_file)
 
     with open(input_file) as csv_file:
@@ -47,7 +50,7 @@ def convert(input_file, export_type, output_file="output.csv", delimiter=';'):
         print(f'Processed {line_count} lines.')
 
     with open(output_file, 'w') as output_file:
-        writer = csv.writer(output_file, delimiter=delimiter)
+        writer = csv.writer(output_file, delimiter=output_delimiter)
         writer.writerows([asdict(hb_entry).values() for hb_entry in hb_entries])
 
 
